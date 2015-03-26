@@ -1,0 +1,14 @@
+#pragma once
+#define WIN32_LEAN_AND_MEAN
+#define STRICT
+#define STRICT_GS_ENABLED
+#define _CRTDBG_MAP_ALLOC
+#include <windows.h>
+#include <pathcch.h>
+#include <shlwapi.h>
+#include <winioctl.h>
+#include <clocale>
+#include <cstdio>
+#include <memory>
+#include <crtdbg.h>
+#include "banned.h"
