@@ -3,6 +3,7 @@
 #define STRICT_GS_ENABLED
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
+#include <atlbase.h>
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
@@ -67,12 +68,13 @@ std::unique_ptr<bool> CheckReFSVersion( PCWSTR on_volume_path )
 		return nullptr;
 	}
 	*end_bslash = L'\0';
-	auto volume = CreateFileW( guid_path, FILE_EXECUTE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr );
+	HANDLE volume = CreateFileW( guid_path, FILE_EXECUTE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr );
 	if( volume == INVALID_HANDLE_VALUE )
 	{
 		PrintfWindowsError();
 		return nullptr;
 	}
+	ATL::CHandle c_volume( volume );
 	ULONG dummy;
 	REFS_VOLUME_DATA_BUFFER refs_info;
 	if( DeviceIoControl( volume, FSCTL_GET_REFS_VOLUME_DATA, nullptr, 0, &refs_info, sizeof refs_info, &dummy, nullptr ) )
@@ -101,19 +103,19 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	{
 		return FALSE;
 	}
+	ATL::CHandle c_source( source );
 	FILE_STANDARD_INFO file_standard;
 	if( !GetFileInformationByHandleEx( source, FileStandardInfo, &file_standard, sizeof file_standard ) )
 	{
-		CloseHandle( source );
 		return FALSE;
 	}
 
 	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source );
 	if( destination == INVALID_HANDLE_VALUE )
 	{
-		CloseHandle( source );
 		return FALSE;
 	}
+	ATL::CHandle c_destination( destination );
 
 	BOOL success;
 	ULONG dummy;
@@ -139,8 +141,6 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		FILE_DISPOSITION_INFO dispose = { TRUE };
 		SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose );
 	}
-	CloseHandle( destination );
-	CloseHandle( source );
 	return success;
 }
 int __cdecl wmain( int argc, PWSTR argv[] )

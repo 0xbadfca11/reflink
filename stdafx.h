@@ -4,6 +4,7 @@
 #define STRICT_GS_ENABLED
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
+#include <atlbase.h>
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
