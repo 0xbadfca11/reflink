@@ -128,12 +128,10 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 	if( success )
 	{
-		FILE_BASIC_INFO file_basic_info[2];
-		if( GetFileInformationByHandleEx( source, FileBasicInfo, &file_basic_info[0], sizeof file_basic_info )
-			&& GetFileInformationByHandleEx( destination, FileBasicInfo, &file_basic_info[1], sizeof file_basic_info ) )
+		FILETIME atime, mtime;
+		if( GetFileTime( source, nullptr, &atime, &mtime ) )
 		{
-			file_basic_info[0].CreationTime.QuadPart = file_basic_info[1].CreationTime.QuadPart;
-			SetFileInformationByHandle( destination, FileBasicInfo, &file_basic_info[0], sizeof file_basic_info );
+			SetFileTime( destination, nullptr, &atime, &mtime );
 		}
 	}
 	if( !success )
