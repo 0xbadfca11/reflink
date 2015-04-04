@@ -121,38 +121,41 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return FALSE;
 	}
 	ATL::CHandle c_destination( destination );
-
-	BOOL success = true;
-	ULONG dummy;
+	FILE_DISPOSITION_INFO dispose = { TRUE };
+	if( !SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) )
+	{
+		return FALSE;
+	}
 
 	if( file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE )
 	{
-		success = DeviceIoControl( destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr );
+		ULONG dummy;
+		if( !DeviceIoControl( destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr ) )
+		{
+			return FALSE;
+		}
 	}
-	if( success )
+	FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
+	if( !SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file ) )
 	{
-		FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
-		success = SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file );
+		return FALSE;
 	}
-	if( success )
+	DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 }, { 0 }, file_standard.AllocationSize };
+	ULONG dummy;
+	if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
 	{
-		DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 }, { 0 }, file_standard.AllocationSize };
-		success = DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr );
+		return FALSE;
 	}
-	if( success )
+	else
 	{
 #pragma warning( suppress: 4838 )
 		FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
 #pragma warning( suppress: 4838 )
 		FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
 		SetFileTime( destination, nullptr, &atime, &mtime );
+		dispose.DeleteFile = FALSE;
+		return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose );
 	}
-	if( !success )
-	{
-		FILE_DISPOSITION_INFO dispose = { TRUE };
-		SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose );
-	}
-	return success;
 }
 int __cdecl wmain( int argc, PWSTR argv[] )
 {
