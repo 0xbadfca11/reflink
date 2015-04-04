@@ -122,12 +122,18 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 	ATL::CHandle c_destination( destination );
 
-	BOOL success;
+	BOOL success = true;
 	ULONG dummy;
 
-	FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
-	success = SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file );
-
+	if( file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE )
+	{
+		success = DeviceIoControl( destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr );
+	}
+	if( success )
+	{
+		FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
+		success = SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file );
+	}
 	if( success )
 	{
 		DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 }, { 0 }, file_standard.AllocationSize };
@@ -135,7 +141,9 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 	if( success )
 	{
+#pragma warning( suppress: 4838 )
 		FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
+#pragma warning( suppress: 4838 )
 		FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
 		SetFileTime( destination, nullptr, &atime, &mtime );
 	}
