@@ -109,6 +109,11 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	{
 		return FALSE;
 	}
+	FILE_BASIC_INFO file_basic;
+	if( !GetFileInformationByHandleEx( source, FileBasicInfo, &file_basic, sizeof file_basic ) )
+	{
+		return FALSE;
+	}
 
 	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source );
 	if( destination == INVALID_HANDLE_VALUE )
@@ -130,11 +135,9 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 	if( success )
 	{
-		FILETIME atime, mtime;
-		if( GetFileTime( source, nullptr, &atime, &mtime ) )
-		{
-			SetFileTime( destination, nullptr, &atime, &mtime );
-		}
+		FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
+		FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
+		SetFileTime( destination, nullptr, &atime, &mtime );
 	}
 	if( !success )
 	{
