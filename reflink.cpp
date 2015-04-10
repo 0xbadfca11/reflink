@@ -47,7 +47,7 @@ void PrintUsage()
 		PathFindFileNameW( __wargv[0] )
 		);
 }
-std::unique_ptr<bool> CheckReFSVersion( PCWSTR on_volume_path )
+std::unique_ptr<bool> CheckReFSVersion( _In_z_ PCWSTR on_volume_path )
 {
 	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
 	if( !GetVolumePathNameW( on_volume_path, mount_point.get(), PATHCCH_MAX_CCH ) )
