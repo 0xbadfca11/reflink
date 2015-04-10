@@ -66,7 +66,16 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -100,16 +109,17 @@
       <SDLCheck>true</SDLCheck>
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalOptions>/Zc:strictStrings /guard:cf %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:strictStrings %(AdditionalOptions)</AdditionalOptions>
       <ErrorReporting>Send</ErrorReporting>
       <CallingConvention>VectorCall</CallingConvention>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <SetChecksum>true</SetChecksum>
-      <AdditionalOptions>/PDBALTPATH:$(Platform)\$(Configuration)\%_PDB% /guard:cf %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/PDBALTPATH:$(Platform)\$(Configuration)\%_PDB% %(AdditionalOptions)</AdditionalOptions>
       <LinkErrorReporting>SendErrorReport</LinkErrorReporting>
     </Link>
   </ItemDefinitionGroup>
@@ -125,8 +135,9 @@
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <CallingConvention>VectorCall</CallingConvention>
-      <AdditionalOptions>/Zc:strictStrings /guard:cf /cgthreads$(NUMBER_OF_PROCESSORS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:strictStrings %(AdditionalOptions)</AdditionalOptions>
       <ErrorReporting>Send</ErrorReporting>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,7 +147,7 @@
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <LargeAddressAware>true</LargeAddressAware>
       <SetChecksum>true</SetChecksum>
-      <AdditionalOptions>/PDBALTPATH:$(Configuration)\%_PDB% /guard:cf /CGTHREADS:$(NUMBER_OF_PROCESSORS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/PDBALTPATH:$(Configuration)\%_PDB% %(AdditionalOptions)</AdditionalOptions>
       <LinkErrorReporting>SendErrorReport</LinkErrorReporting>
     </Link>
   </ItemDefinitionGroup>
@@ -152,8 +163,9 @@
       <ForcedIncludeFiles>stdafx.h</ForcedIncludeFiles>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <CallingConvention>VectorCall</CallingConvention>
-      <AdditionalOptions>/Zc:strictStrings /guard:cf /cgthreads$(NUMBER_OF_PROCESSORS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:strictStrings %(AdditionalOptions)</AdditionalOptions>
       <ErrorReporting>Send</ErrorReporting>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,7 +174,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
       <SetChecksum>true</SetChecksum>
-      <AdditionalOptions>/PDBALTPATH:$(Platform)\$(Configuration)\%_PDB% /guard:cf  /CGTHREADS:$(NUMBER_OF_PROCESSORS) %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/PDBALTPATH:$(Platform)\$(Configuration)\%_PDB% %(AdditionalOptions)</AdditionalOptions>
       <LinkErrorReporting>SendErrorReport</LinkErrorReporting>
     </Link>
   </ItemDefinitionGroup>
