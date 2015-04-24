@@ -10,7 +10,7 @@ You must set *HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystemUtilities!Refs
 
 You may check by `fsutil fsinfo refsinfo`.  
 ReFS version 1.2(10 and 8.1/2012 R2's default) or 1.1(2012's default) is bad.  
-version 22.2 is needed.
+version 2.0(or 22.2) is needed.
 
 ###### LICENSE
 MIT License
