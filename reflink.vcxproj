@@ -70,7 +70,7 @@
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>false</LinkIncremental>
+    <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -112,13 +112,11 @@
       <AdditionalOptions>/Zc:strictStrings %(AdditionalOptions)</AdditionalOptions>
       <ErrorReporting>Send</ErrorReporting>
       <CallingConvention>VectorCall</CallingConvention>
-      <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <SetChecksum>true</SetChecksum>
       <AdditionalOptions>/PDBALTPATH:$(Platform)\$(Configuration)\%_PDB% %(AdditionalOptions)</AdditionalOptions>
       <LinkErrorReporting>SendErrorReport</LinkErrorReporting>
     </Link>
