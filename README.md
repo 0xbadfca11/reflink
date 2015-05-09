@@ -1,16 +1,21 @@
 reflink for Windows
 ===
-Windows 10 introduce new FSCTL, `FSCTL_DUPLICATE_EXTENTS_TO_FILE` to **ReFS**.  
+Windows 10 introduce new FSCTL, `FSCTL_DUPLICATE_EXTENTS_TO_FILE` to **ReFS 2.0**.  
 This FSCTL is like `BTRFS_IOC_CLONE_RANGE`.  
 This tool is using FSCTL simply like `cp --reflink`.
 
 ### Important notice
-Default ReFS disk format does not support FSCTL\_DUPLICATE\_EXTENTS\_TO\_FILE.  
-You must set *HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystemUtilities!RefsFormatVersion=dword:2*, before format volume.
+1. Windows 10 Technical/Insider Preview still using ReFS 1.2.  
+You must do  
+`reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystemUtilities /v RefsFormatVersion /t REG_DWORD /d 2`  
+before format volume.
+  * Windows Server Technical Preview 2 uses ReFS 2.0 by default, this tweak is not require.
+  * Old preview build says new disk format is ReFS 22.2.
+2. ReFS 2.0 is still in active development.
 
-You may check by `fsutil fsinfo refsinfo`.  
-ReFS version 1.2(10 and 8.1/2012 R2's default) or 1.1(2012's default) is bad.  
-version 2.0(or 22.2) is needed.
+  >They are likely to become inaccessible on later Technical Preview releases.  
+  >https://technet.microsoft.com/en-us/library/mt126109.aspx
 
+You may check by `fsutil fsinfo refsinfo`.
 ###### LICENSE
 MIT License
