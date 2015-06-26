@@ -96,35 +96,35 @@ std::unique_ptr<bool> CheckReFSVersion( _In_z_ PCWSTR on_volume_path )
 	}
 	return nullptr;
 }
-BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
+bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 {
 	HANDLE source = CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr );
 	if( source == INVALID_HANDLE_VALUE )
 	{
-		return FALSE;
+		return false;
 	}
 	ATL::CHandle c_source( source );
 	FILE_STANDARD_INFO file_standard;
 	if( !GetFileInformationByHandleEx( source, FileStandardInfo, &file_standard, sizeof file_standard ) )
 	{
-		return FALSE;
+		return false;
 	}
 	FILE_BASIC_INFO file_basic;
 	if( !GetFileInformationByHandleEx( source, FileBasicInfo, &file_basic, sizeof file_basic ) )
 	{
-		return FALSE;
+		return false;
 	}
 
 	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source );
 	if( destination == INVALID_HANDLE_VALUE )
 	{
-		return FALSE;
+		return false;
 	}
 	ATL::CHandle c_destination( destination );
 	FILE_DISPOSITION_INFO dispose = { TRUE };
 	if( !SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) )
 	{
-		return FALSE;
+		return false;
 	}
 
 	if( file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE )
@@ -132,19 +132,19 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		ULONG dummy;
 		if( !DeviceIoControl( destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr ) )
 		{
-			return FALSE;
+			return false;
 		}
 	}
 	FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
 	if( !SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file ) )
 	{
-		return FALSE;
+		return false;
 	}
 	DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 }, { 0 }, file_standard.AllocationSize };
 	ULONG dummy;
 	if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
 	{
-		return FALSE;
+		return false;
 	}
 	else
 	{
@@ -154,7 +154,7 @@ BOOL reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
 		SetFileTime( destination, nullptr, &atime, &mtime );
 		dispose.DeleteFile = FALSE;
-		return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose );
+		return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) != 0;
 	}
 }
 int __cdecl wmain( int argc, PWSTR argv[] )
