@@ -34,55 +34,6 @@ void PrintWindowsError( ULONG error_code = GetLastError() )
 		fprintf( stderr, "%ls\n", error_msg.get() );
 	}
 }
-std::unique_ptr<bool> CheckReFSVersion( _In_z_ PCWSTR on_volume_path )
-{
-	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
-	if( !GetVolumePathNameW( on_volume_path, mount_point.get(), PATHCCH_MAX_CCH ) )
-	{
-		PrintWindowsError();
-		return nullptr;
-	}
-	WCHAR guid_path[50];
-	if( !GetVolumeNameForVolumeMountPointW( mount_point.get(), guid_path, ARRAYSIZE( guid_path ) ) )
-	{
-		PrintWindowsError();
-		return nullptr;
-	}
-	PWCHAR end_bslash;
-	if( FAILED( PathCchRemoveBackslashEx( guid_path, ARRAYSIZE( guid_path ), &end_bslash, nullptr ) ) )
-	{
-		PrintWindowsError();
-		return nullptr;
-	}
-	*end_bslash = L'\0';
-	HANDLE volume = CreateFileW( guid_path, FILE_EXECUTE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr );
-	if( volume == INVALID_HANDLE_VALUE )
-	{
-		PrintWindowsError();
-		return nullptr;
-	}
-	ATL::CHandle c_volume( volume );
-	ULONG dummy;
-	REFS_VOLUME_DATA_BUFFER refs_info;
-	if( DeviceIoControl( volume, FSCTL_GET_REFS_VOLUME_DATA, nullptr, 0, &refs_info, sizeof refs_info, &dummy, nullptr ) )
-	{
-		fprintf( stderr, "%ls is ReFS %lu.%lu\n", mount_point.get(), refs_info.MajorVersion, refs_info.MinorVersion );
-		if( refs_info.MajorVersion < 1 || ( refs_info.MajorVersion == 1 && refs_info.MinorVersion <= 2 ) )
-		{
-			return std::make_unique<bool>( false );
-		}
-		else
-		{
-			return std::make_unique<bool>( true );
-		}
-	}
-	WCHAR fs_name_buffer[MAX_PATH + 1];
-	if( GetVolumeInformationByHandleW( volume, nullptr, 0, nullptr, nullptr, nullptr, fs_name_buffer, ARRAYSIZE( fs_name_buffer ) ) )
-	{
-		fprintf( stderr, "%ls is %ls\n", mount_point.get(), fs_name_buffer );
-	}
-	return nullptr;
-}
 bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 {
 	HANDLE source = CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr );
@@ -91,6 +42,16 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return false;
 	}
 	ATL::CHandle c_source( source );
+	ULONG fs_flags;
+	if( !GetVolumeInformationByHandleW( source, nullptr, 0, nullptr, nullptr, &fs_flags, nullptr, 0 ) )
+	{
+		return false;
+	}
+	if( !( fs_flags & FILE_SUPPORTS_BLOCK_REFCOUNTING ) )
+	{
+		SetLastError( ERROR_NOT_CAPABLE );
+		return false;
+	}
 	FILE_STANDARD_INFO file_standard;
 	if( !GetFileInformationByHandleEx( source, FileStandardInfo, &file_standard, sizeof file_standard ) )
 	{
@@ -178,11 +139,6 @@ int __cdecl wmain( int argc, PWSTR argv[] )
 	{
 		PrintWindowsError();
 		return EXIT_FAILURE;
-	}
-	auto refs_capability = CheckReFSVersion( source.get() );
-	if( !refs_capability || !*refs_capability )
-	{
-		fputs( "reflink may fail.\n", stderr );
 	}
 	if( !reflink( source.get(), destination.get() ) )
 	{
