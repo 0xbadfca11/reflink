@@ -2,6 +2,8 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
 #define STRICT_GS_ENABLED
+#define _ATL_NO_AUTOMATIC_NAMESPACE
+#define _ATL_NO_COM_SUPPORT
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <atlbase.h>

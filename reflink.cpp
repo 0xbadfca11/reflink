@@ -1,6 +1,8 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
 #define STRICT_GS_ENABLED
+#define _ATL_NO_AUTOMATIC_NAMESPACE
+#define _ATL_NO_COM_SUPPORT
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <atlbase.h>
@@ -25,53 +27,38 @@ std::unique_ptr<WCHAR[]> GetWindowsError( ULONG error_code = GetLastError() )
 	}
 	return nullptr;
 }
-void PrintfWindowsError( ULONG error_code = GetLastError() )
+void PrintWindowsError( ULONG error_code = GetLastError() )
 {
 	if( auto error_msg = GetWindowsError( error_code ) )
 	{
 		fprintf( stderr, "%ls\n", error_msg.get() );
 	}
 }
-void PrintUsage()
-{
-	fprintf(
-		stderr,
-		"Copy file without actual data write.\n"
-		"\n"
-		"%ls source destination\n"
-		"\n"
-		"source       Specifies a file to copy.\n"
-		"             source must have placed on the ReFS volume.\n"
-		"destination  Specifies new file name.\n"
-		"             destination must have placed on the same volume as source.\n",
-		PathFindFileNameW( __wargv[0] )
-		);
-}
 std::unique_ptr<bool> CheckReFSVersion( _In_z_ PCWSTR on_volume_path )
 {
 	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
 	if( !GetVolumePathNameW( on_volume_path, mount_point.get(), PATHCCH_MAX_CCH ) )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return nullptr;
 	}
 	WCHAR guid_path[50];
 	if( !GetVolumeNameForVolumeMountPointW( mount_point.get(), guid_path, ARRAYSIZE( guid_path ) ) )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return nullptr;
 	}
 	PWCHAR end_bslash;
 	if( FAILED( PathCchRemoveBackslashEx( guid_path, ARRAYSIZE( guid_path ), &end_bslash, nullptr ) ) )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return nullptr;
 	}
 	*end_bslash = L'\0';
 	HANDLE volume = CreateFileW( guid_path, FILE_EXECUTE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr );
 	if( volume == INVALID_HANDLE_VALUE )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return nullptr;
 	}
 	ATL::CHandle c_volume( volume );
@@ -115,7 +102,11 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return false;
 	}
 
+#ifdef _DEBUG
+	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source );
+#else
 	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source );
+#endif
 	if( destination == INVALID_HANDLE_VALUE )
 	{
 		return false;
@@ -166,7 +157,18 @@ int __cdecl wmain( int argc, PWSTR argv[] )
 
 	if( argc != 3 )
 	{
-		PrintUsage();
+		fprintf(
+			stderr,
+			"Copy file without actual data write.\n"
+			"\n"
+			"%ls source destination\n"
+			"\n"
+			"source       Specifies a file to copy.\n"
+			"             source must have placed on the ReFS volume.\n"
+			"destination  Specifies new file name.\n"
+			"             destination must have placed on the same volume as source.\n",
+			PathFindFileNameW( argv[0] )
+			);
 		return EXIT_FAILURE;
 	}
 	auto source = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
@@ -174,7 +176,7 @@ int __cdecl wmain( int argc, PWSTR argv[] )
 	if( FAILED( PathCchCanonicalizeEx( source.get(), PATHCCH_MAX_CCH, argv[1], PATHCCH_ALLOW_LONG_PATHS ) )
 		|| FAILED( PathCchCanonicalizeEx( destination.get(), PATHCCH_MAX_CCH, argv[2], PATHCCH_ALLOW_LONG_PATHS ) ) )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return EXIT_FAILURE;
 	}
 	auto refs_capability = CheckReFSVersion( source.get() );
@@ -184,7 +186,7 @@ int __cdecl wmain( int argc, PWSTR argv[] )
 	}
 	if( !reflink( source.get(), destination.get() ) )
 	{
-		PrintfWindowsError();
+		PrintWindowsError();
 		return EXIT_FAILURE;
 	}
 }
