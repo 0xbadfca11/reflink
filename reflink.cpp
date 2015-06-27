@@ -9,6 +9,7 @@
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
+#include <algorithm>
 #include <clocale>
 #include <cstdio>
 #include <memory>
@@ -34,8 +35,25 @@ void PrintWindowsError( ULONG error_code = GetLastError() )
 		fprintf( stderr, "%ls\n", error_msg.get() );
 	}
 }
+_Success_( return != 0 )
+ULONG GetCluserSizeByPath( _In_z_ PCWSTR path )
+{
+	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
+	if( !GetVolumePathNameW( path, mount_point.get(), PATHCCH_MAX_CCH ) )
+	{
+		return 0;
+	}
+	ULONG sectors_per_cluster, sector_size, junk;
+	if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
+	{
+		return 0;
+	}
+	return sectors_per_cluster * sector_size;
+}
+_Success_( return == true )
 bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 {
+	_ASSERTE( oldpath != nullptr && newpath != nullptr );
 	HANDLE source = CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr );
 	if( source == INVALID_HANDLE_VALUE )
 	{
@@ -92,22 +110,41 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	{
 		return false;
 	}
-	DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 }, { 0 }, file_standard.AllocationSize };
-	ULONG dummy;
-	if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
+
+	const unsigned split_threshold = 2U * 1024 * 1024 * 1024;
+	ULONG cluster_size = GetCluserSizeByPath( oldpath );
+	if( !cluster_size )
 	{
 		return false;
 	}
-	else
+	if( split_threshold % cluster_size != 0 )
 	{
-#pragma warning( suppress: 4838 )
-		FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
-#pragma warning( suppress: 4838 )
-		FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
-		SetFileTime( destination, nullptr, &atime, &mtime );
-		dispose.DeleteFile = FALSE;
-		return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) != 0;
+		SetLastError( ERROR_NOT_SUPPORTED );
+		return false;
 	}
+
+	DUPLICATE_EXTENTS_DATA dup_extent = { source };
+	for( LONG64 offset = 0, remain = file_standard.AllocationSize.QuadPart; remain > 0; offset += split_threshold, remain -= split_threshold )
+	{
+		dup_extent.SourceFileOffset.QuadPart = dup_extent.TargetFileOffset.QuadPart = offset;
+		dup_extent.ByteCount.QuadPart = std::min<LONG64>( split_threshold, remain );
+		_ASSERTE( dup_extent.ByteCount.HighPart == 0 );
+		_RPT3( _CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart );
+		ULONG dummy;
+		if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
+		{
+			_CrtDbgBreak();
+			return false;
+		}
+	}
+
+#pragma warning( suppress: 4838 )
+	FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
+#pragma warning( suppress: 4838 )
+	FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
+	SetFileTime( destination, nullptr, &atime, &mtime );
+	dispose.DeleteFile = FALSE;
+	return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) != 0;
 }
 int __cdecl wmain( int argc, PWSTR argv[] )
 {

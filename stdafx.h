@@ -10,6 +10,7 @@
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
+#include <algorithm>
 #include <clocale>
 #include <cstdio>
 #include <memory>
