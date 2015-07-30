@@ -14,7 +14,6 @@
 #include <cstdio>
 #include <memory>
 #include <crtdbg.h>
-#include "banned.h"
 #pragma comment(lib, "pathcch")
 #pragma comment(lib, "shlwapi")
 #pragma comment(lib, "user32")
