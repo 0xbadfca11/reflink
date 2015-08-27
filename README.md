@@ -17,7 +17,7 @@ Windows Insider Preview build 10130 or later stopped supporting ReFS 2.0.
   >https://technet.microsoft.com/en-us/library/mt126109.aspx
 
 3. Microsoft issued errata for FSCTL_DUPLICATE_EXTENTS_TO_FILE.  
-Current source code does not work future Preview.
+Current source code may not work future Preview.
 
   >https://msdn.microsoft.com/en-us/library/dn785066.aspx#BKMK_FSCC
 
