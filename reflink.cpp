@@ -1,11 +1,10 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
-#define STRICT_GS_ENABLED
 #define _ATL_NO_AUTOMATIC_NAMESPACE
-#define _ATL_NO_COM_SUPPORT
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <atlbase.h>
+#include <atlfile.h>
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
@@ -34,31 +33,17 @@ void PrintWindowsError( ULONG error_code = GetLastError() )
 		fprintf( stderr, "%ls\n", error_msg.get() );
 	}
 }
-_Success_( return != 0 )
-ULONG GetCluserSizeByPath( _In_z_ PCWSTR path )
-{
-	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
-	if( !GetVolumePathNameW( path, mount_point.get(), PATHCCH_MAX_CCH ) )
-	{
-		return 0;
-	}
-	ULONG sectors_per_cluster, sector_size, junk;
-	if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
-	{
-		return 0;
-	}
-	return sectors_per_cluster * sector_size;
-}
 _Success_( return == true )
 bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 {
 	_ASSERTE( oldpath != nullptr && newpath != nullptr );
-	HANDLE source = CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr );
+	ATL::CAtlFile source{ CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr ) };
 	if( source == INVALID_HANDLE_VALUE )
 	{
+		source.Detach();
 		return false;
 	}
-	ATL::CHandle c_source( source );
+
 	ULONG fs_flags;
 	if( !GetVolumeInformationByHandleW( source, nullptr, 0, nullptr, nullptr, &fs_flags, nullptr, 0 ) )
 	{
@@ -69,6 +54,7 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		SetLastError( ERROR_NOT_CAPABLE );
 		return false;
 	}
+
 	FILE_STANDARD_INFO file_standard;
 	if( !GetFileInformationByHandleEx( source, FileStandardInfo, &file_standard, sizeof file_standard ) )
 	{
@@ -81,15 +67,15 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 
 #ifdef _DEBUG
-	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source );
+	ATL::CAtlFile destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source ) };
 #else
-	HANDLE destination = CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source );
+	ATL::CAtlFile destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source ) };
 #endif
 	if( destination == INVALID_HANDLE_VALUE )
 	{
+		destination.Detach();
 		return false;
 	}
-	ATL::CHandle c_destination( destination );
 	FILE_DISPOSITION_INFO dispose = { TRUE };
 	if( !SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) )
 	{
@@ -111,11 +97,17 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 
 	const unsigned split_threshold = 2U * 1024 * 1024 * 1024;
-	ULONG cluster_size = GetCluserSizeByPath( oldpath );
-	if( !cluster_size )
+	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
+	if( !GetVolumePathNameW( oldpath, mount_point.get(), PATHCCH_MAX_CCH ) )
 	{
 		return false;
 	}
+	ULONG sectors_per_cluster, sector_size, junk;
+	if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
+	{
+		return false;
+	}
+	ULONG cluster_size = sectors_per_cluster * sector_size;
 	if( split_threshold % cluster_size != 0 )
 	{
 		SetLastError( ERROR_NOT_SUPPORTED );
@@ -137,10 +129,8 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		}
 	}
 
-#pragma warning( suppress: 4838 )
-	FILETIME atime = { file_basic.LastAccessTime.LowPart, file_basic.LastAccessTime.HighPart };
-#pragma warning( suppress: 4838 )
-	FILETIME mtime = { file_basic.LastWriteTime.LowPart, file_basic.LastWriteTime.HighPart };
+	FILETIME atime = { file_basic.LastAccessTime.LowPart, ULONG( file_basic.LastAccessTime.HighPart ) };
+	FILETIME mtime = { file_basic.LastWriteTime.LowPart, ULONG( file_basic.LastWriteTime.HighPart ) };
 	SetFileTime( destination, nullptr, &atime, &mtime );
 	dispose.DeleteFile = FALSE;
 	return SetFileInformationByHandle( destination, FileDispositionInfo, &dispose, sizeof dispose ) != 0;
