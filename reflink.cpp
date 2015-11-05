@@ -4,7 +4,6 @@
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <atlbase.h>
-#include <atlfile.h>
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
@@ -37,7 +36,7 @@ _Success_( return == true )
 bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 {
 	_ASSERTE( oldpath != nullptr && newpath != nullptr );
-	ATL::CAtlFile source{ CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr ) };
+	ATL::CHandle source{ CreateFileW( oldpath, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr ) };
 	if( source == INVALID_HANDLE_VALUE )
 	{
 		source.Detach();
@@ -67,9 +66,9 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	}
 
 #ifdef _DEBUG
-	ATL::CAtlFile destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source ) };
+	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source ) };
 #else
-	ATL::CAtlFile destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source ) };
+	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source ) };
 #endif
 	if( destination == INVALID_HANDLE_VALUE )
 	{
