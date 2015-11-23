@@ -16,6 +16,21 @@
 #pragma comment(lib, "shlwapi")
 #pragma comment(lib, "user32")
 
+#pragma region
+static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm )
+			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm ), "" );
+static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm )
+			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm ), "" );
+static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Reserved )
+			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Reserved ), "" );
+static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Reserved )
+			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Reserved ), "" );
+static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Flags )
+			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Flags ), "" );
+static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Flags )
+			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Flags ), "" );
+#pragma endregion
+
 std::unique_ptr<WCHAR[]> GetWindowsError( ULONG error_code = GetLastError() )
 {
 	auto msg = std::make_unique<WCHAR[]>( USHRT_MAX );
@@ -64,11 +79,20 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 	{
 		return false;
 	}
+	ULONG dummy;
+	union{
+		FSCTL_GET_INTEGRITY_INFORMATION_BUFFER get_integrity;
+		FSCTL_SET_INTEGRITY_INFORMATION_BUFFER set_integrity;
+	};
+	if( !DeviceIoControl( source, FSCTL_GET_INTEGRITY_INFORMATION, nullptr, 0, &get_integrity, sizeof get_integrity, &dummy, nullptr ) )
+	{
+		return false;
+	}
 
 #ifdef _DEBUG
-	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source ) };
+	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_READ | GENERIC_WRITE | DELETE, 0, nullptr, CREATE_ALWAYS, 0, source ) };
 #else
-	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source ) };
+	ATL::CHandle destination{ CreateFileW( newpath, GENERIC_READ | GENERIC_WRITE | DELETE, 0, nullptr, CREATE_NEW, 0, source ) };
 #endif
 	if( destination == INVALID_HANDLE_VALUE )
 	{
@@ -83,11 +107,14 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 
 	if( file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE )
 	{
-		ULONG dummy;
 		if( !DeviceIoControl( destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr ) )
 		{
 			return false;
 		}
+	}
+	if( !DeviceIoControl( destination, FSCTL_SET_INTEGRITY_INFORMATION, &set_integrity, sizeof set_integrity, nullptr, 0, nullptr, nullptr ) )
+	{
+		return false;
 	}
 	FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
 	if( !SetFileInformationByHandle( destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file ) )
@@ -120,7 +147,6 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		dup_extent.ByteCount.QuadPart = std::min<LONG64>( split_threshold, remain );
 		_ASSERTE( dup_extent.ByteCount.HighPart == 0 );
 		_RPT3( _CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart );
-		ULONG dummy;
 		if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
 		{
 			_CrtDbgBreak();
