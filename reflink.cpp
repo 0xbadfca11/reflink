@@ -122,23 +122,7 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return false;
 	}
 
-	const unsigned split_threshold = 2U * 1024 * 1024 * 1024;
-	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
-	if( !GetVolumePathNameW( oldpath, mount_point.get(), PATHCCH_MAX_CCH ) )
-	{
-		return false;
-	}
-	ULONG sectors_per_cluster, sector_size, junk;
-	if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
-	{
-		return false;
-	}
-	ULONG cluster_size = sectors_per_cluster * sector_size;
-	if( split_threshold % cluster_size != 0 )
-	{
-		SetLastError( ERROR_NOT_SUPPORTED );
-		return false;
-	}
+	const ULONG split_threshold = 0UL - get_integrity.ClusterSizeInBytes;
 
 	DUPLICATE_EXTENTS_DATA dup_extent = { source };
 	for( LONG64 offset = 0, remain = file_standard.AllocationSize.QuadPart; remain > 0; offset += split_threshold, remain -= split_threshold )
