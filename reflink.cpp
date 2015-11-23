@@ -95,49 +95,36 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return false;
 	}
 
-	_RPT0( _CRT_WARN, "Try 1st\n" );
-
-	DUPLICATE_EXTENTS_DATA dup_extent = { source, { 0 },  { 0 }, file_standard.AllocationSize };
-	_ASSERTE( dup_extent.SourceFileOffset.QuadPart == 0 );
-	_ASSERTE( dup_extent.TargetFileOffset.QuadPart == 0 );
-	ULONG dummy;
-	if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
+	const unsigned split_threshold = 2U * 1024 * 1024 * 1024;
+	auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
+	if( !GetVolumePathNameW( oldpath, mount_point.get(), PATHCCH_MAX_CCH ) )
 	{
-		if( GetLastError() != ERROR_ARITHMETIC_OVERFLOW )
+		return false;
+	}
+	ULONG sectors_per_cluster, sector_size, junk;
+	if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
+	{
+		return false;
+	}
+	ULONG cluster_size = sectors_per_cluster * sector_size;
+	if( split_threshold % cluster_size != 0 )
+	{
+		SetLastError( ERROR_NOT_SUPPORTED );
+		return false;
+	}
+
+	DUPLICATE_EXTENTS_DATA dup_extent = { source };
+	for( LONG64 offset = 0, remain = file_standard.AllocationSize.QuadPart; remain > 0; offset += split_threshold, remain -= split_threshold )
+	{
+		dup_extent.SourceFileOffset.QuadPart = dup_extent.TargetFileOffset.QuadPart = offset;
+		dup_extent.ByteCount.QuadPart = std::min<LONG64>( split_threshold, remain );
+		_ASSERTE( dup_extent.ByteCount.HighPart == 0 );
+		_RPT3( _CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart );
+		ULONG dummy;
+		if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
 		{
 			_CrtDbgBreak();
 			return false;
-		}
-
-		_RPT0( _CRT_WARN, "Try 2nd\n" );
-
-		const unsigned split_threshold = 2U * 1024 * 1024 * 1024;
-		auto mount_point = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
-		if( !GetVolumePathNameW( oldpath, mount_point.get(), PATHCCH_MAX_CCH ) )
-		{
-			return false;
-		}
-		ULONG sectors_per_cluster, sector_size, junk;
-		if( !GetDiskFreeSpaceW( mount_point.get(), &sectors_per_cluster, &sector_size, &junk, &junk ) )
-		{
-			return false;
-		}
-		if( split_threshold % ( sectors_per_cluster * sector_size ) != 0 )
-		{
-			SetLastError( ERROR_NOT_SUPPORTED );
-			return false;
-		}
-		for( LONG64 offset = 0, remain = file_standard.AllocationSize.QuadPart; remain > 0; offset += split_threshold, remain -= split_threshold )
-		{
-			dup_extent.SourceFileOffset.QuadPart = dup_extent.TargetFileOffset.QuadPart = offset;
-			dup_extent.ByteCount.QuadPart = std::min<LONG64>( split_threshold, remain );
-			_ASSERTE( dup_extent.ByteCount.QuadPart <= UINT32_MAX );
-			_RPT3( _CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart );
-			if( !DeviceIoControl( destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr ) )
-			{
-				_CrtDbgBreak();
-				return false;
-			}
 		}
 	}
 
