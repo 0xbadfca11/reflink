@@ -150,10 +150,14 @@ int __cdecl wmain( int argc, PWSTR argv[] )
 			);
 		return EXIT_FAILURE;
 	}
+	auto intermediate_source = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
+	auto intermediate_destination = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
 	auto source = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
 	auto destination = std::make_unique<WCHAR[]>( PATHCCH_MAX_CCH );
-	if( FAILED( PathCchCanonicalizeEx( source.get(), PATHCCH_MAX_CCH, argv[1], PATHCCH_ALLOW_LONG_PATHS ) )
-		|| FAILED( PathCchCanonicalizeEx( destination.get(), PATHCCH_MAX_CCH, argv[2], PATHCCH_ALLOW_LONG_PATHS ) ) )
+	if( !GetFullPathNameW( argv[1], PATHCCH_MAX_CCH, intermediate_source.get(), nullptr )
+		|| !GetFullPathNameW( argv[2], PATHCCH_MAX_CCH, intermediate_destination.get(), nullptr )
+		|| FAILED( PathCchCanonicalizeEx( source.get(), PATHCCH_MAX_CCH, intermediate_source.get(), PATHCCH_ALLOW_LONG_PATHS ) )
+		|| FAILED( PathCchCanonicalizeEx( destination.get(), PATHCCH_MAX_CCH, intermediate_destination.get(), PATHCCH_ALLOW_LONG_PATHS ) ) )
 	{
 		PrintWindowsError();
 		return EXIT_FAILURE;
