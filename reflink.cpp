@@ -16,21 +16,6 @@
 #pragma comment(lib, "shlwapi")
 #pragma comment(lib, "user32")
 
-#pragma region
-static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm )
-			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm ), "" );
-static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm )
-			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, ChecksumAlgorithm ), "" );
-static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Reserved )
-			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Reserved ), "" );
-static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Reserved )
-			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Reserved ), "" );
-static_assert( FIELD_OFFSET( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Flags )
-			== FIELD_OFFSET( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Flags ), "" );
-static_assert( RTL_SIZEOF_THROUGH_FIELD( FSCTL_GET_INTEGRITY_INFORMATION_BUFFER, Flags )
-			== RTL_SIZEOF_THROUGH_FIELD( FSCTL_SET_INTEGRITY_INFORMATION_BUFFER, Flags ), "" );
-#pragma endregion
-
 std::unique_ptr<WCHAR[]> GetWindowsError( ULONG error_code = GetLastError() )
 {
 	auto msg = std::make_unique<WCHAR[]>( USHRT_MAX );
@@ -80,10 +65,7 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 		return false;
 	}
 	ULONG dummy;
-	union{
-		FSCTL_GET_INTEGRITY_INFORMATION_BUFFER get_integrity;
-		FSCTL_SET_INTEGRITY_INFORMATION_BUFFER set_integrity;
-	};
+	FSCTL_GET_INTEGRITY_INFORMATION_BUFFER get_integrity;
 	if( !DeviceIoControl( source, FSCTL_GET_INTEGRITY_INFORMATION, nullptr, 0, &get_integrity, sizeof get_integrity, &dummy, nullptr ) )
 	{
 		return false;
@@ -112,6 +94,7 @@ bool reflink( _In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath )
 			return false;
 		}
 	}
+	FSCTL_SET_INTEGRITY_INFORMATION_BUFFER set_integrity = { get_integrity.ChecksumAlgorithm, get_integrity.Reserved, get_integrity.Flags };
 	if( !DeviceIoControl( destination, FSCTL_SET_INTEGRITY_INFORMATION, &set_integrity, sizeof set_integrity, nullptr, 0, nullptr, nullptr ) )
 	{
 		return false;
