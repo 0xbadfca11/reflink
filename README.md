@@ -1,6 +1,6 @@
 reflink for Windows
 ===
-Windows Server 2016 Technical Preview introduce Block Cloning.  
+Windows Server 2016 Technical Preview introduce [Block Cloning](https://msdn.microsoft.com/en-us/library/windows/desktop/mt590820.aspx).  
 I wanted `cp --reflink`. But, only exposed to API.
 
 ### Important note
