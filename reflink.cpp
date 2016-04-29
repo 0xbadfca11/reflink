@@ -1,9 +1,11 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
 #define _ATL_NO_AUTOMATIC_NAMESPACE
+#define _CSTRING_DISABLE_NARROW_WIDE_CONVERSION
 #define _CRTDBG_MAP_ALLOC
 #include <windows.h>
 #include <atlbase.h>
+#include <atlstr.h>
 #include <pathcch.h>
 #include <shlwapi.h>
 #include <winioctl.h>
@@ -31,6 +33,58 @@ void PrintWindowsError(ULONG error_code = GetLastError())
 	{
 		fprintf(stderr, "%ls\n", error_msg.get());
 	}
+}
+ATL::CStringW& PrependPathPrefix(_In_ ATL::CStringW* path)
+{
+	const WCHAR prefix[] = LR"(\\?\)";
+	if (!PathIsRelativeW(*path) && wcsncmp(*path, prefix, wcslen(prefix)) != 0)
+	{
+		if (!PathIsUNCW(*path))
+		{
+			if (*path[0] != L'\\')
+			{
+				path->Insert(0, prefix);
+			}
+		}
+		else
+		{
+			path->Insert(2, LR"(?\UNC\)");
+		}
+	}
+	return *path;
+}
+ATL::CStringW realpath(ATL::CStringW path)
+{
+	_RPT1(_CRT_WARN, __FUNCTION__ "(<%ls)\n", (PCWSTR)path);
+	const PCWSTR filename = PathFindFileNameW(path);
+	const ptrdiff_t basepath = filename - (PCWSTR)path;
+	if (basepath > PATHCCH_MAX_CCH)
+	{
+		AtlThrow(HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND));
+	}
+	ATL::CStringW stage1(path, (int)basepath);
+	if (stage1.GetLength() == 0)
+	{
+		auto stage1_5 = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
+		if (!GetCurrentDirectory(PATHCCH_MAX_CCH, stage1_5.get()) || FAILED(PathCchAddBackslashEx(stage1_5.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
+		{
+			ATL::AtlThrowLastWin32();
+		}
+		stage1 = stage1_5.get();
+	}
+	auto stage2 = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
+	if (!GetFullPathNameW(PrependPathPrefix(&stage1), PATHCCH_MAX_CCH, stage2.get(), nullptr))
+	{
+		ATL::AtlThrowLastWin32();
+	}
+	if (FAILED(PathCchAddBackslashEx(stage2.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
+	{
+		ATL::AtlThrowLastWin32();
+	}
+	ATL::CStringW stage3 = stage2.get();
+	PrependPathPrefix(&stage3) += filename;
+	_RPT1(_CRT_WARN, __FUNCTION__ "(>%ls)\n", (PCWSTR)stage3);
+	return stage3;
 }
 _Success_(return == true)
 bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
@@ -125,7 +179,7 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	FILETIME mtime = { file_basic.LastWriteTime.LowPart, ULONG(file_basic.LastWriteTime.HighPart) };
 	SetFileTime(destination, nullptr, &atime, &mtime);
 	dispose.DeleteFile = FALSE;
-	return SetFileInformationByHandle(destination, FileDispositionInfo, &dispose, sizeof dispose) != 0;
+	return !!SetFileInformationByHandle(destination, FileDispositionInfo, &dispose, sizeof dispose);
 }
 int __cdecl wmain(int argc, PWSTR argv[])
 {
@@ -150,19 +204,7 @@ int __cdecl wmain(int argc, PWSTR argv[])
 		);
 		return EXIT_FAILURE;
 	}
-	auto intermediate_source = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-	auto intermediate_destination = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-	auto source = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-	auto destination = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-	if (!GetFullPathNameW(argv[1], PATHCCH_MAX_CCH, intermediate_source.get(), nullptr)
-		|| !GetFullPathNameW(argv[2], PATHCCH_MAX_CCH, intermediate_destination.get(), nullptr)
-		|| FAILED(PathCchCanonicalizeEx(source.get(), PATHCCH_MAX_CCH, intermediate_source.get(), PATHCCH_ALLOW_LONG_PATHS))
-		|| FAILED(PathCchCanonicalizeEx(destination.get(), PATHCCH_MAX_CCH, intermediate_destination.get(), PATHCCH_ALLOW_LONG_PATHS)))
-	{
-		PrintWindowsError();
-		return EXIT_FAILURE;
-	}
-	if (!reflink(source.get(), destination.get()))
+	if (!reflink(realpath(argv[1]), realpath(argv[2])))
 	{
 		PrintWindowsError();
 		return EXIT_FAILURE;
