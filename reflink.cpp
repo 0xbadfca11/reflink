@@ -34,7 +34,7 @@ void PrintWindowsError(ULONG error_code = GetLastError())
 		fprintf(stderr, "%ls\n", error_msg.get());
 	}
 }
-ATL::CStringW& PrependPathPrefix(_In_ ATL::CStringW* path)
+ATL::CStringW& PrependPathPrefix(_Inout_ ATL::CStringW* path)
 {
 	const WCHAR prefix[] = LR"(\\?\)";
 	if (!PathIsRelativeW(*path) && wcsncmp(*path, prefix, wcslen(prefix)) != 0)
