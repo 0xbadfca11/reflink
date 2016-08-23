@@ -66,7 +66,7 @@ ATL::CStringW realpath(ATL::CStringW path)
 	if (stage1.GetLength() == 0)
 	{
 		auto stage1_5 = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-		if (!GetCurrentDirectory(PATHCCH_MAX_CCH, stage1_5.get()) || FAILED(PathCchAddBackslashEx(stage1_5.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
+		if (!GetCurrentDirectoryW(PATHCCH_MAX_CCH, stage1_5.get()) || FAILED(PathCchAddBackslashEx(stage1_5.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
 		{
 			ATL::AtlThrowLastWin32();
 		}
