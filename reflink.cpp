@@ -1,21 +1,15 @@
 #define WIN32_LEAN_AND_MEAN
 #define STRICT
 #define _ATL_NO_AUTOMATIC_NAMESPACE
-#define _CSTRING_DISABLE_NARROW_WIDE_CONVERSION
 #define _CRTDBG_MAP_ALLOC
-#include <windows.h>
 #include <atlbase.h>
-#include <atlstr.h>
-#include <pathcch.h>
-#include <shlwapi.h>
+#include <windows.h>
 #include <winioctl.h>
 #include <algorithm>
 #include <clocale>
 #include <cstdio>
 #include <memory>
 #include <crtdbg.h>
-#pragma comment(lib, "pathcch")
-#pragma comment(lib, "shlwapi")
 #pragma comment(lib, "user32")
 
 std::unique_ptr<WCHAR[]> GetWindowsError(ULONG error_code = GetLastError())
@@ -33,58 +27,6 @@ void PrintWindowsError(ULONG error_code = GetLastError())
 	{
 		fprintf(stderr, "%ls\n", error_msg.get());
 	}
-}
-ATL::CStringW& PrependPathPrefix(_Inout_ ATL::CStringW* path)
-{
-	const WCHAR prefix[] = LR"(\\?\)";
-	if (!PathIsRelativeW(*path) && wcsncmp(*path, prefix, wcslen(prefix)) != 0)
-	{
-		if (!PathIsUNCW(*path))
-		{
-			if (*path[0] != L'\\')
-			{
-				path->Insert(0, prefix);
-			}
-		}
-		else
-		{
-			path->Insert(2, LR"(?\UNC\)");
-		}
-	}
-	return *path;
-}
-ATL::CStringW realpath(ATL::CStringW path)
-{
-	_RPT1(_CRT_WARN, __FUNCTION__ "(<%ls)\n", (PCWSTR)path);
-	const PCWSTR filename = PathFindFileNameW(path);
-	const ptrdiff_t basepath = filename - (PCWSTR)path;
-	if (basepath > PATHCCH_MAX_CCH)
-	{
-		AtlThrow(HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND));
-	}
-	ATL::CStringW stage1(path, (int)basepath);
-	if (stage1.GetLength() == 0)
-	{
-		auto stage1_5 = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-		if (!GetCurrentDirectoryW(PATHCCH_MAX_CCH, stage1_5.get()) || FAILED(PathCchAddBackslashEx(stage1_5.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
-		{
-			ATL::AtlThrowLastWin32();
-		}
-		stage1 = stage1_5.get();
-	}
-	auto stage2 = std::make_unique<WCHAR[]>(PATHCCH_MAX_CCH);
-	if (!GetFullPathNameW(PrependPathPrefix(&stage1), PATHCCH_MAX_CCH, stage2.get(), nullptr))
-	{
-		ATL::AtlThrowLastWin32();
-	}
-	if (FAILED(PathCchAddBackslashEx(stage2.get(), PATHCCH_MAX_CCH, nullptr, nullptr)))
-	{
-		ATL::AtlThrowLastWin32();
-	}
-	ATL::CStringW stage3 = stage2.get();
-	PrependPathPrefix(&stage3) += filename;
-	_RPT1(_CRT_WARN, __FUNCTION__ "(>%ls)\n", (PCWSTR)stage3);
-	return stage3;
 }
 _Success_(return == true)
 bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
@@ -178,7 +120,7 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	FILETIME atime = { file_basic.LastAccessTime.LowPart, ULONG(file_basic.LastAccessTime.HighPart) };
 	FILETIME mtime = { file_basic.LastWriteTime.LowPart, ULONG(file_basic.LastWriteTime.HighPart) };
 	SetFileTime(destination, nullptr, &atime, &mtime);
-	dispose.DeleteFile = FALSE;
+	dispose = { FALSE };
 	return !!SetFileInformationByHandle(destination, FileDispositionInfo, &dispose, sizeof dispose);
 }
 int __cdecl wmain(int argc, PWSTR argv[])
@@ -190,21 +132,20 @@ int __cdecl wmain(int argc, PWSTR argv[])
 
 	if (argc != 3)
 	{
-		fprintf(
-			stderr,
+		fputs(
 			"Copy file without actual data write.\n"
 			"\n"
-			"%ls source destination\n"
+			"reflink source destination\n"
 			"\n"
 			"source       Specifies a file to copy.\n"
 			"             source must have placed on the ReFS volume.\n"
 			"destination  Specifies new file name.\n"
 			"             destination must have placed on the same volume as source.\n",
-			PathFindFileNameW(argv[0])
+			stderr
 		);
 		return EXIT_FAILURE;
 	}
-	if (!reflink(realpath(argv[1]), realpath(argv[2])))
+	if (!reflink(argv[1], argv[2]))
 	{
 		PrintWindowsError();
 		return EXIT_FAILURE;
