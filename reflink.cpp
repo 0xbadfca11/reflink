@@ -15,7 +15,7 @@
 std::unique_ptr<WCHAR[]> GetWindowsError(ULONG error_code = GetLastError())
 {
 	auto msg = std::make_unique<WCHAR[]>(USHRT_MAX);
-	if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, error_code, 0, msg.get(), USHRT_MAX, nullptr))
+	if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, error_code, 0, msg.get(), USHRT_MAX, nullptr))
 	{
 		return msg;
 	}
