@@ -28,6 +28,10 @@ void PrintWindowsError(ULONG error_code = GetLastError())
 		fprintf(stderr, "%ls\n", error_msg.get());
 	}
 }
+constexpr LONG64 inline ROUNDUP(LONG64 number, ULONG num_digits) noexcept
+{
+	return (number + num_digits - 1) / num_digits * num_digits;
+}
 _Success_(return == true)
 bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 {
@@ -50,8 +54,8 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 		return false;
 	}
 
-	FILE_STANDARD_INFO file_standard;
-	if (!GetFileInformationByHandleEx(source, FileStandardInfo, &file_standard, sizeof file_standard))
+	LARGE_INTEGER file_size;
+	if (!GetFileSizeEx(source, &file_size))
 	{
 		return false;
 	}
@@ -95,7 +99,7 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	{
 		return false;
 	}
-	FILE_END_OF_FILE_INFO end_of_file = { file_standard.EndOfFile };
+	FILE_END_OF_FILE_INFO end_of_file = { file_size };
 	if (!SetFileInformationByHandle(destination, FileEndOfFileInfo, &end_of_file, sizeof end_of_file))
 	{
 		return false;
@@ -104,10 +108,12 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	const ULONG split_threshold = 0UL - get_integrity.ClusterSizeInBytes;
 
 	DUPLICATE_EXTENTS_DATA dup_extent = { source };
-	for (LONG64 offset = 0, remain = file_standard.AllocationSize.QuadPart; remain > 0; offset += split_threshold, remain -= split_threshold)
+	for (LONG64 offset = 0, remain = ROUNDUP(file_size.QuadPart, get_integrity.ClusterSizeInBytes); remain > 0; offset += split_threshold, remain -= split_threshold)
 	{
 		dup_extent.SourceFileOffset.QuadPart = dup_extent.TargetFileOffset.QuadPart = offset;
 		dup_extent.ByteCount.QuadPart = std::min<LONG64>(split_threshold, remain);
+		_ASSERTE(dup_extent.SourceFileOffset.QuadPart % get_integrity.ClusterSizeInBytes == 0);
+		_ASSERTE(dup_extent.ByteCount.QuadPart % get_integrity.ClusterSizeInBytes == 0);
 		_ASSERTE(dup_extent.ByteCount.HighPart == 0);
 		_RPT3(_CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart);
 		if (!DeviceIoControl(destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr))
