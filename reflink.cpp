@@ -1,5 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
-#define STRICT
+#define STRICT_GS_ENABLED
 #define _ATL_NO_AUTOMATIC_NAMESPACE
 #define _CRTDBG_MAP_ALLOC
 #include <atlbase.h>
