@@ -9,11 +9,11 @@ I wanted `cp --reflink`. But, only exposed to API.
   Windows 10 version 1607 (build 14393) and earlier Windows only can use ReFS v1.  
   Even moving ReFS v1 volume from earlier Windows to WS2016 or W10 v1703 cannot use Block Cloning. Require format to ReFS v2 in WS2016 or W10 v1703.  
   You may check by `fsutil fsinfo refsinfo` or `fsutil fsinfo volumeinfo`.  
-  - by refsinfo  
-    Version 1.2 or 1.1 is ReFS v1.  
-    Version 3.2 or 3.1 is ReFS v2.  
   - by volumeinfo  
     When `Supports Block Cloning` is included in fsutil output, can use Block Cloning.  
+  - by refsinfo  
+    Version 1.2 or 1.1 is ReFS v1.  
+    Version 3.3, 3.2 or 3.1 is ReFS v2.  
 
 ###### LICENSE
 MIT License
