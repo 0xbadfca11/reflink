@@ -126,6 +126,10 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	FILETIME atime = { file_basic.LastAccessTime.LowPart, ULONG(file_basic.LastAccessTime.HighPart) };
 	FILETIME mtime = { file_basic.LastWriteTime.LowPart, ULONG(file_basic.LastWriteTime.HighPart) };
 	SetFileTime(destination, nullptr, &atime, &mtime);
+	if (!FlushFileBuffers(destination))
+	{
+		return false;
+	}
 	dispose = { FALSE };
 	return !!SetFileInformationByHandle(destination, FileDispositionInfo, &dispose, sizeof dispose);
 }
