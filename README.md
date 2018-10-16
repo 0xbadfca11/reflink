@@ -1,6 +1,17 @@
 reflink for Windows
 ===
-Windows Server 2016 introduce [Block Cloning feature](https://msdn.microsoft.com/en-us/library/windows/desktop/mt590820.aspx).  
+```
+Copy file without actual data write.
+
+reflink source destination
+
+source       Specifies a file to copy.
+             source must have placed on the ReFS volume.
+destination  Specifies new file name.
+             destination must have placed on the same volume as source.
+
+```
+Windows Server 2016 introduce [Block Cloning feature](https://docs.microsoft.com/windows-server/storage/refs/block-cloning).  
 I wanted `cp --reflink`. But, only exposed to API.
 
 ### Important note
