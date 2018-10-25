@@ -1,4 +1,4 @@
-reflink for Windows
+reflink for Windows [![Build status](https://ci.appveyor.com/api/projects/status/wgh88bpt8v3hj4o1)](https://ci.appveyor.com/project/0xbadfca11/reflink)
 ===
 ```
 Copy file without actual data write.
