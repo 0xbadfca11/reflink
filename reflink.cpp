@@ -6,33 +6,13 @@
 #include <windows.h>
 #include <winioctl.h>
 #include <algorithm>
-#include <clocale>
-#include <cstdio>
-#include <memory>
+#include "reflink.h"
 #include <crtdbg.h>
-#pragma comment(lib, "user32")
 
-std::unique_ptr<WCHAR[]> GetWindowsError(ULONG error_code = GetLastError())
-{
-	auto msg = std::make_unique<WCHAR[]>(USHRT_MAX);
-	if (FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, error_code, 0, msg.get(), USHRT_MAX, nullptr))
-	{
-		return msg;
-	}
-	return nullptr;
-}
-void PrintWindowsError(ULONG error_code = GetLastError())
-{
-	if (auto error_msg = GetWindowsError(error_code))
-	{
-		fprintf(stderr, "%ls\n", error_msg.get());
-	}
-}
 constexpr LONG64 inline ROUNDUP(LONG64 number, ULONG num_digits) noexcept
 {
 	return (number + num_digits - 1) / num_digits * num_digits;
 }
-_Success_(return == true)
 bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 {
 	_ASSERTE(oldpath != nullptr && newpath != nullptr);
@@ -132,33 +112,4 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	}
 	dispose = { FALSE };
 	return !!SetFileInformationByHandle(destination, FileDispositionInfo, &dispose, sizeof dispose);
-}
-int __cdecl wmain(int argc, PWSTR argv[])
-{
-	ATLENSURE(SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32));
-	_CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_DEBUG | _CRTDBG_MODE_FILE);
-	setlocale(LC_ALL, "");
-
-	if (argc != 3)
-	{
-		fputs(
-			"Copy file without actual data write.\n"
-			"\n"
-			"reflink source destination\n"
-			"\n"
-			"source       Specifies a file to copy.\n"
-			"             source must have placed on the ReFS volume.\n"
-			"destination  Specifies new file name.\n"
-			"             destination must have placed on the same volume as source.\n",
-			stderr
-		);
-		return EXIT_FAILURE;
-	}
-	if (!reflink(argv[1], argv[2]))
-	{
-		PrintWindowsError();
-		return EXIT_FAILURE;
-	}
 }

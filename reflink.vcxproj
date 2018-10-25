@@ -271,12 +271,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="reflink.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="longPathAware.manifest">
       <SubType>Designer</SubType>
     </Manifest>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="reflink.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
