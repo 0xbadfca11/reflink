@@ -13,6 +13,7 @@ constexpr LONG64 inline ROUNDUP(LONG64 number, ULONG num_digits) noexcept
 {
 	return (number + num_digits - 1) / num_digits * num_digits;
 }
+_Success_(return == true)
 bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 {
 	_ASSERTE(oldpath != nullptr && newpath != nullptr);
@@ -44,9 +45,9 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 	{
 		return false;
 	}
-	ULONG dummy;
+	ULONG junk;
 	FSCTL_GET_INTEGRITY_INFORMATION_BUFFER get_integrity;
-	if (!DeviceIoControl(source, FSCTL_GET_INTEGRITY_INFORMATION, nullptr, 0, &get_integrity, sizeof get_integrity, &dummy, nullptr))
+	if (!DeviceIoControl(source, FSCTL_GET_INTEGRITY_INFORMATION, nullptr, 0, &get_integrity, sizeof get_integrity, &junk, nullptr))
 	{
 		return false;
 	}
@@ -69,7 +70,7 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 
 	if (file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE)
 	{
-		if (!DeviceIoControl(destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &dummy, nullptr))
+		if (!DeviceIoControl(destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &junk, nullptr))
 		{
 			return false;
 		}
@@ -85,26 +86,26 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 		return false;
 	}
 
-	const ULONG split_threshold = 0UL - get_integrity.ClusterSizeInBytes;
+	const LONG64 split_threshold = (1LL << 32) - get_integrity.ClusterSizeInBytes;
 
 	DUPLICATE_EXTENTS_DATA dup_extent = { source };
 	for (LONG64 offset = 0, remain = ROUNDUP(file_size.QuadPart, get_integrity.ClusterSizeInBytes); remain > 0; offset += split_threshold, remain -= split_threshold)
 	{
 		dup_extent.SourceFileOffset.QuadPart = dup_extent.TargetFileOffset.QuadPart = offset;
-		dup_extent.ByteCount.QuadPart = std::min<LONG64>(split_threshold, remain);
+		dup_extent.ByteCount.QuadPart = (std::min)(split_threshold, remain);
 		_ASSERTE(dup_extent.SourceFileOffset.QuadPart % get_integrity.ClusterSizeInBytes == 0);
 		_ASSERTE(dup_extent.ByteCount.QuadPart % get_integrity.ClusterSizeInBytes == 0);
-		_ASSERTE(dup_extent.ByteCount.HighPart == 0);
+		_ASSERTE(dup_extent.ByteCount.QuadPart <= UINT32_MAX);
 		_RPT3(_CRT_WARN, "r=%llx\no=%llx\nb=%llx\n\n", remain, dup_extent.SourceFileOffset.QuadPart, dup_extent.ByteCount.QuadPart);
-		if (!DeviceIoControl(destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &dummy, nullptr))
+		if (!DeviceIoControl(destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &junk, nullptr))
 		{
 			_CrtDbgBreak();
 			return false;
 		}
 	}
 
-	FILETIME atime = { file_basic.LastAccessTime.LowPart, ULONG(file_basic.LastAccessTime.HighPart) };
-	FILETIME mtime = { file_basic.LastWriteTime.LowPart, ULONG(file_basic.LastWriteTime.HighPart) };
+	FILETIME atime = { file_basic.LastAccessTime.LowPart, static_cast<ULONG>(file_basic.LastAccessTime.HighPart) };
+	FILETIME mtime = { file_basic.LastWriteTime.LowPart, static_cast<ULONG>(file_basic.LastWriteTime.HighPart) };
 	SetFileTime(destination, nullptr, &atime, &mtime);
 	if (!FlushFileBuffers(destination))
 	{
