@@ -203,7 +203,8 @@
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)','$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force</Command>
+      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
+"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
       <Message>Create ZIP</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -236,7 +237,8 @@
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)','$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force</Command>
+      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
+"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
       <Message>Create ZIP</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -269,7 +271,8 @@
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)','$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force</Command>
+      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
+"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
       <Message>Create ZIP</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
