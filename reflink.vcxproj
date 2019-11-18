@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -36,39 +36,39 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -107,15 +107,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <ExtensionsToDeleteOnClean>*.zip;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <ExtensionsToDeleteOnClean>*.zip;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
-    <ExtensionsToDeleteOnClean>*.zip;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -124,7 +121,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -143,7 +140,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -161,7 +158,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -183,7 +180,7 @@
       <RuntimeLibrary>MultiThreadedDll</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <OmitFramePointers>false</OmitFramePointers>
@@ -196,16 +193,12 @@
       <SetChecksum>true</SetChecksum>
       <AdditionalDependencies>libvcruntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>vcruntime.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <MergeSections>_RDATA=.rdata</MergeSections>
       <AdditionalOptions>/PDBALTPATH:%_PDB% /DEPENDENTLOADFLAG:0x800 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
-"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
-      <Message>Create ZIP</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -218,7 +211,7 @@
       <RuntimeLibrary>MultiThreadedDll</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <OmitFramePointers>false</OmitFramePointers>
@@ -230,16 +223,12 @@
       <SetChecksum>true</SetChecksum>
       <AdditionalDependencies>libvcruntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>vcruntime.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <MergeSections>_RDATA=.rdata</MergeSections>
       <AdditionalOptions>/PDBALTPATH:%_PDB% /DEPENDENTLOADFLAG:0x800 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
-"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
-      <Message>Create ZIP</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <ClCompile>
@@ -252,7 +241,7 @@
       <RuntimeLibrary>MultiThreadedDll</RuntimeLibrary>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <SDLCheck>true</SDLCheck>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <TreatWarningAsError>true</TreatWarningAsError>
       <OmitFramePointers>false</OmitFramePointers>
@@ -264,16 +253,12 @@
       <SetChecksum>true</SetChecksum>
       <AdditionalDependencies>libvcruntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>vcruntime.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <MergeSections>_RDATA=.rdata</MergeSections>
       <AdditionalOptions>/PDBALTPATH:%_PDB% /DEPENDENTLOADFLAG:0x800 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>"$(ProjectDir)\longPathAware.manifest" %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <PostBuildEvent>
-      <Command>"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(TargetPath)' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)' -Force
-"$(SystemRoot)\system32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command Compress-Archive -LiteralPath '$(OutputPath)$(TargetName).pdb' -DestinationPath '$(OutputPath)$(TargetName)-$(PlatformTarget)-symbol' -Force</Command>
-      <Message>Create ZIP</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
