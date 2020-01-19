@@ -11,7 +11,6 @@
 #include <memory>
 #include "reflink.h"
 #include <crtdbg.h>
-#pragma comment(lib, "user32")
 
 std::unique_ptr<WCHAR[]> GetWindowsError(ULONG error_code = GetLastError())
 {
