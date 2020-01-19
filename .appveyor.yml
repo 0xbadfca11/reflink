@@ -1,7 +1,6 @@
 matrix:
   fast_finish: true
-skip_tags: true
-clone_depth: 1
+clone_depth: 5
 environment:
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
