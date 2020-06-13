@@ -1,6 +1,6 @@
 matrix:
   fast_finish: true
-clone_depth: 5
+shallow_clone: true
 environment:
   matrix:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
@@ -30,13 +30,13 @@ before_test:
   - ps: 'Initialize-Disk -Number (New-VHD -Path C:\test.vhdx -SizeBytes 127GB | Mount-VHD -Passthru).DiskNumber -PartitionStyle MBR -PassThru | New-Partition -UseMaximumSize -DriveLetter D | Format-Volume -FileSystem ReFS -Confirm:$false -Force'
 test_script:
 - cmd: |
-    fsutil file createnew D:\test1 10737418240
-    fsutil file setvaliddata D:\test1 10737418240
+    fsutil file createnew D:\test1 85899345920
+    fsutil file setvaliddata D:\test1 85899345920
     fsutil file %queryextents% D:\test1
     if "%Platform%"=="x86" (%Configuration%\reflink.exe D:\test1 D:\test2) else (%Platform%\%Configuration%\reflink.exe D:\test1 D:\test2)
-    fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
+    fsutil file %queryextents% D:\test1
     dd if=C:\Windows\System32\ntdll.dll of=D:\test2 bs=1M oflag=seek_bytes seek=1G conv=notrunc,fsync
-    fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
+    fsutil file %queryextents% D:\test1
 deploy: off
