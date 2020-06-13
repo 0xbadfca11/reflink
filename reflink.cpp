@@ -71,12 +71,9 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 		return false;
 	}
 
-	if (file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE)
+	if (!DeviceIoControl(destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &junk, nullptr))
 	{
-		if (!DeviceIoControl(destination, FSCTL_SET_SPARSE, nullptr, 0, nullptr, 0, &junk, nullptr))
-		{
-			return false;
-		}
+		return false;
 	}
 	FSCTL_SET_INTEGRITY_INFORMATION_BUFFER set_integrity = { get_integrity.ChecksumAlgorithm, get_integrity.Reserved, get_integrity.Flags };
 	if (!DeviceIoControl(destination, FSCTL_SET_INTEGRITY_INFORMATION, &set_integrity, sizeof set_integrity, nullptr, 0, nullptr, nullptr))
@@ -103,6 +100,15 @@ bool reflink(_In_z_ PCWSTR oldpath, _In_z_ PCWSTR newpath)
 		if (!DeviceIoControl(destination, FSCTL_DUPLICATE_EXTENTS_TO_FILE, &dup_extent, sizeof dup_extent, nullptr, 0, &junk, nullptr))
 		{
 			_CrtDbgBreak();
+			return false;
+		}
+	}
+
+	if (!(file_basic.FileAttributes & FILE_ATTRIBUTE_SPARSE_FILE))
+	{
+		FILE_SET_SPARSE_BUFFER set_sparse = { FALSE };
+		if (!DeviceIoControl(destination, FSCTL_SET_SPARSE, &set_sparse, sizeof set_sparse, nullptr, 0, &junk, nullptr))
+		{
 			return false;
 		}
 	}
