@@ -37,7 +37,7 @@ test_script:
     fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
     dd if=C:\Windows\System32\ntdll.dll of=D:\test2 bs=1M oflag=seek_bytes seek=1G conv=notrunc,fsync
-    dd of=D:\test1 conv=notrunc,fdatasync count=0
+    dd of=D:\test1 conv=notrunc,fsync count=0
     fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
 deploy: off
