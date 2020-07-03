@@ -36,8 +36,7 @@ test_script:
     if "%Platform%"=="x86" (%Configuration%\reflink.exe D:\test1 D:\test2) else (%Platform%\%Configuration%\reflink.exe D:\test1 D:\test2)
     fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
-    dd if=C:\Windows\System32\ntdll.dll of=D:\test1 bs=1M oflag=seek_bytes seek=1G conv=notrunc,fsync
-    dd if=C:\Windows\System32\ntdll.dll of=D:\test2 bs=1M oflag=seek_bytes seek=1G conv=notrunc,fsync
+    dd if=C:\Windows\System32\ntdll.dll of=D:\test2 bs=1M oflag=seek_bytes seek=1G conv=notrunc,fsync iflag=nocache
     fsutil file %queryextents% D:\test1
     fsutil file %queryextents% D:\test2
 deploy: off
