@@ -24,7 +24,7 @@ I wanted `cp --reflink`. But, only exposed to API.
     When `Supports Block Cloning` is included in fsutil output, can use Block Cloning.  
   - by refsinfo  
     Version 1.2 or 1.1 is ReFS v1.  
-    Version 3.7, 3.4, 3.3, 3.2 or 3.1 is ReFS v2.  
+    Version 3.9, 3.7, 3.4, 3.3, 3.2 or 3.1 is ReFS v2.  
 
 ###### LICENSE
 MIT License
