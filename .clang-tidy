@@ -1,0 +1,26 @@
+Checks: '
+  -clang-analyzer-optin.osx.*,
+  -clang-analyzer-osx.*,
+  -clang-diagnostic-missing-designated-field-initializers,
+  -clang-diagnostic-nonportable-system-include-path,
+  bugprone-macro-parentheses,
+  bugprone-misplaced-*,
+  bugprone-redundant-*,
+  bugprone-suspicious-*,
+  google-readability-casting,
+  misc-redundant-expression,
+  modernize-*,
+  -modernize-avoid-c-arrays,
+  -modernize-use-auto,
+  -modernize-use-std-print,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-implicit-bool-conversion,
+  -readability-magic-numbers,
+  -readability-math-missing-parentheses,
+  '
+ExtraArgs:
+  - '-Wno-unused-command-line-argument'
